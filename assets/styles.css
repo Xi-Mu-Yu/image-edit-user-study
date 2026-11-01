@@ -94,7 +94,9 @@ body { min-height: 100vh; }
   border-radius: 10px;
   padding: 10px 12px;
 }
-.criteria p { margin: 4px 0 0; color: var(--muted); font-size: 0.9rem; }
+.criteria p { margin: 4px 0 0; color: var(--ink); font-size: 0.9rem; }
+.criteria p .en,
+.metric .en { color: var(--muted); font-size: 0.9em; }
 
 .pager {
   display: flex;
