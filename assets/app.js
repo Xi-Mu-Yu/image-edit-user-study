@@ -1,5 +1,4 @@
 import { CONFIG } from "./config.js";
-import { submitScores, isTokenConfigured, buildGitHubSubmitUrl } from "./store.js";
 
 const STORAGE_KEY = "user-study-scores-v1";
 const SESSION_KEY = "user-study-session-v1";
@@ -19,11 +18,10 @@ const els = {
   progressBar: document.getElementById("progressBar"),
   progressText: document.getElementById("progressText"),
   raterLabel: document.getElementById("raterLabel"),
-  btnSubmit: document.getElementById("btnSubmit"),
   btnExport: document.getElementById("btnExport"),
   btnLogout: document.getElementById("btnLogout"),
   filterIncomplete: document.getElementById("filterIncomplete"),
-  submitStatus: document.getElementById("submitStatus"),
+  exportHint: document.getElementById("exportHint"),
 };
 
 let data = null;
@@ -81,6 +79,10 @@ function completedCount() {
   return data.cases.filter(isCaseComplete).length;
 }
 
+function allComplete() {
+  return data && completedCount() === data.cases.length;
+}
+
 function updateProgress() {
   if (!data) return;
   const done = completedCount();
@@ -88,7 +90,16 @@ function updateProgress() {
   const pct = total ? Math.round((done / total) * 100) : 0;
   els.progressBar.style.backgroundSize = `${pct}% 100%`;
   els.progressText.textContent = `${done} / ${total} completed (${pct}%)`;
-  els.btnSubmit.disabled = false;
+
+  const ready = allComplete();
+  els.btnExport.disabled = !ready;
+  els.btnExport.title = ready
+    ? "Download your completed scores"
+    : `Finish all cases first (${done}/${total})`;
+  els.exportHint.textContent = ready
+    ? "All cases completed. You can now Backup JSON and send the file to the organizer."
+    : `Backup JSON unlocks after all cases are rated (${done}/${total}).`;
+  els.exportHint.classList.toggle("ready", ready);
 }
 
 function setScore(caseId, method, criterion, value) {
@@ -217,7 +228,7 @@ function buildPayload() {
   return {
     schema: 1,
     rater_id: session.raterId,
-    submitted_at: new Date().toISOString(),
+    exported_at: new Date().toISOString(),
     completed_cases: completedCount(),
     total_cases: data.cases.length,
     criteria: data.criteria.map((c) => c.key),
@@ -226,55 +237,26 @@ function buildPayload() {
   };
 }
 
-async function handleSubmit() {
-  const done = completedCount();
-  const total = data.cases.length;
-  if (done < total) {
-    const ok = confirm(
-      `还有 ${total - done} 个 case 未完成。确定仍要提交吗？\nSubmit incomplete results (${done}/${total})?`
-    );
-    if (!ok) return;
-  }
+function show(el) {
+  el.classList.remove("is-hidden");
+  el.hidden = false;
+  el.removeAttribute("aria-hidden");
+}
 
-  const payload = buildPayload();
-  els.btnSubmit.disabled = true;
-  els.submitStatus.textContent = "Submitting...";
-
-  try {
-    if (isTokenConfigured()) {
-      const result = await submitScores(payload);
-      const action = result.updated ? "updated" : "created";
-      els.submitStatus.innerHTML = `Submitted successfully (${action}). Issue <a href="${result.html_url}" target="_blank" rel="noopener">#${result.number}</a>`;
-      saveSession({ ...session, lastSubmitAt: new Date().toISOString(), issueNumber: result.number });
-      return;
-    }
-
-    // No token: open GitHub new-issue page (rater confirms once; must be logged into GitHub)
-    const url = buildGitHubSubmitUrl(payload);
-    const opened = window.open(url, "_blank", "noopener");
-    if (!opened) {
-      els.submitStatus.innerHTML = `弹窗被拦截。请手动打开：<a href="${url}" target="_blank" rel="noopener">提交到 GitHub</a>`;
-    } else {
-      els.submitStatus.innerHTML =
-        "已打开 GitHub 提交页：请确认已登录 GitHub，然后点击 <strong>Submit new issue</strong>。提交后组织者可在 admin 页自动统计。";
-    }
-    saveSession({ ...session, lastSubmitAt: new Date().toISOString() });
-  } catch (err) {
-    els.submitStatus.innerHTML = `<span class="error">${escapeHtml(err.message || String(err))}</span>`;
-  } finally {
-    els.btnSubmit.disabled = false;
-  }
+function hide(el) {
+  el.classList.add("is-hidden");
+  el.hidden = true;
+  el.setAttribute("aria-hidden", "true");
 }
 
 function enterApp() {
   scores = loadScores();
-  els.loginGate.hidden = true;
-  els.loginGate.setAttribute("aria-hidden", "true");
-  els.appRoot.hidden = false;
-  els.appRoot.removeAttribute("aria-hidden");
+  hide(els.loginGate);
+  show(els.appRoot);
+  document.body.classList.add("app-mode");
   els.raterLabel.textContent = session.raterId;
   renderCase();
-  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
+  window.scrollTo(0, 0);
 }
 
 function logout() {
@@ -331,15 +313,21 @@ els.filterIncomplete.addEventListener("click", () => {
   }
   alert("All cases are complete.");
 });
-els.btnSubmit.addEventListener("click", handleSubmit);
+
 els.btnExport.addEventListener("click", () => {
+  if (!allComplete()) {
+    alert(`Please finish all cases first (${completedCount()}/${data.cases.length}).`);
+    return;
+  }
   const payload = buildPayload();
   download(`user_study_${payload.rater_id}_${Date.now()}.json`, JSON.stringify(payload, null, 2));
+  els.exportHint.textContent = "JSON downloaded. Please send this file to the organizer.";
 });
+
 els.btnLogout.addEventListener("click", logout);
 
 document.addEventListener("keydown", (e) => {
-  if (els.appRoot.hidden) return;
+  if (els.appRoot.classList.contains("is-hidden")) return;
   if (e.target.matches("input, textarea")) return;
   if (e.key === "ArrowLeft") els.prevBtn.click();
   if (e.key === "ArrowRight") els.nextBtn.click();
