@@ -151,7 +151,7 @@ function renderCase() {
         data.criteria.every((c) => typeof s?.[m]?.[c.key] === "number");
 
       const scoreBlock = isReal
-        ? `<div class="scores"><div class="metric"><label>Reference only / 仅作参考</label></div></div>`
+        ? `<div class="scores"><div class="metric"><label>待编辑原图 / Original image to edit<br/><span class="en">（不评分，仅对照）</span></label></div></div>`
         : `<div class="scores">
             ${data.criteria
               .map((c) => {
