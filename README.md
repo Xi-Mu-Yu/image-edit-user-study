@@ -46,13 +46,18 @@ git push -u origin main
 
 Default passwords are in `assets/config.js` (`studyPassword` / `adminPassword`).
 
-## Enable Submit (one-time)
+## Submit modes
 
-Submit needs a fine-grained GitHub PAT (Issues read/write on this repo only).
-See [TOKEN_SETUP.md](./TOKEN_SETUP.md).
+- **Default (no token):** Submit opens a GitHub Issue draft; rater clicks **Submit new issue** once (needs GitHub login).
+- **One-click (optional):** Add a fine-grained PAT in `assets/config.js` — see [TOKEN_SETUP.md](./TOKEN_SETUP.md).
+
+## Passwords (change in `assets/config.js`)
+
+- Study login: `WhereEdit2026`
+- Admin stats: `WhereEditAdmin2026`
 
 ## Notes
 
 - Method names stay blinded as A–E on the form and admin page.
 - Map A–E back to real methods offline with your local shuffle mapping table.
-- Revoke the PAT after the study ends.
+- Live site: https://xi-mu-yu.github.io/image-edit-user-study/

@@ -23,11 +23,11 @@ function publicHeaders() {
   };
 }
 
-function issueTitle(raterId) {
+export function issueTitle(raterId) {
   return `submission:${String(raterId).trim()}`;
 }
 
-function wrapBody(payload) {
+export function wrapBody(payload) {
   return [
     `<!-- user-study-submission -->`,
     `Rater: **${payload.rater_id}**`,
@@ -45,29 +45,82 @@ function parseIssuePayload(issue) {
   const m = body.match(/```json\s*([\s\S]*?)```/);
   if (!m) return null;
   try {
-    return JSON.parse(m[1]);
+    const raw = JSON.parse(m[1]);
+    return expandPayload(raw);
   } catch {
     return null;
   }
 }
 
-async function findIssueByRater(raterId) {
-  const q = encodeURIComponent(
-    `repo:${CONFIG.owner}/${CONFIG.repo} is:issue label:${CONFIG.label} in:title "${issueTitle(raterId)}"`
-  );
-  const res = await fetch(`${API}/search/issues?q=${q}&per_page=5`, {
-    headers: authHeaders(),
-  });
-  if (!res.ok) {
-    // fallback list
-    return findIssueByRaterFallback(raterId);
+/** Pack scores into a short base64 string for GitHub web-submit URLs. */
+export function compactPayload(payload) {
+  const methods = payload.methods || ["A", "B", "C", "D", "E"];
+  const criteria = payload.criteria || ["semantics", "background"];
+  const total = payload.total_cases || 60;
+  const bytes = [];
+  for (let caseId = 1; caseId <= total; caseId++) {
+    const row = payload.scores?.[String(caseId)] || {};
+    for (const m of methods) {
+      for (const c of criteria) {
+        const v = row?.[m]?.[c];
+        bytes.push(typeof v === "number" && v >= 1 && v <= 5 ? v : 0);
+      }
+    }
   }
-  const data = await res.json();
-  const exact = (data.items || []).find((it) => it.title === issueTitle(raterId));
-  return exact || null;
+  // 4-bit pack
+  const packed = [];
+  for (let i = 0; i < bytes.length; i += 2) {
+    const a = bytes[i] & 0xf;
+    const b = (bytes[i + 1] ?? 0) & 0xf;
+    packed.push((a << 4) | b);
+  }
+  const bin = String.fromCharCode(...packed);
+  const b64 = btoa(bin);
+  return {
+    schema: 2,
+    rater_id: payload.rater_id,
+    submitted_at: payload.submitted_at,
+    completed_cases: payload.completed_cases,
+    total_cases: total,
+    criteria,
+    methods,
+    packed: b64,
+  };
 }
 
-async function findIssueByRaterFallback(raterId) {
+export function expandPayload(raw) {
+  if (!raw) return null;
+  if (raw.schema !== 2 || !raw.packed) return raw;
+  const methods = raw.methods || ["A", "B", "C", "D", "E"];
+  const criteria = raw.criteria || ["semantics", "background"];
+  const total = raw.total_cases || 60;
+  const bin = atob(raw.packed);
+  const nibbles = [];
+  for (let i = 0; i < bin.length; i++) {
+    const byte = bin.charCodeAt(i);
+    nibbles.push((byte >> 4) & 0xf, byte & 0xf);
+  }
+  const scores = {};
+  let k = 0;
+  for (let caseId = 1; caseId <= total; caseId++) {
+    const row = {};
+    let any = false;
+    for (const m of methods) {
+      row[m] = {};
+      for (const c of criteria) {
+        const v = nibbles[k++] || 0;
+        if (v >= 1 && v <= 5) {
+          row[m][c] = v;
+          any = true;
+        }
+      }
+    }
+    if (any) scores[String(caseId)] = row;
+  }
+  return { ...raw, schema: 1, scores, packed: undefined };
+}
+
+async function findIssueByRater(raterId) {
   const title = issueTitle(raterId);
   const res = await fetch(
     `${API}/repos/${CONFIG.owner}/${CONFIG.repo}/issues?labels=${encodeURIComponent(
@@ -116,6 +169,20 @@ export async function submitScores(payload) {
   }
   const issue = await res.json();
   return { updated: false, number: issue.number, html_url: issue.html_url };
+}
+
+/** Open GitHub "new issue" page — no token required; rater confirms once on GitHub. */
+export function buildGitHubSubmitUrl(payload) {
+  const compact = compactPayload(payload);
+  const title = issueTitle(payload.rater_id);
+  const body = wrapBody(compact);
+  const base = `https://github.com/${CONFIG.owner}/${CONFIG.repo}/issues/new`;
+  const params = new URLSearchParams({
+    title,
+    labels: CONFIG.label,
+    body,
+  });
+  return `${base}?${params.toString()}`;
 }
 
 export async function fetchAllSubmissions() {

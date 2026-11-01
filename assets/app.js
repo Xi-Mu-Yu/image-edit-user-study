@@ -1,5 +1,5 @@
 import { CONFIG } from "./config.js";
-import { submitScores, isTokenConfigured } from "./store.js";
+import { submitScores, isTokenConfigured, buildGitHubSubmitUrl } from "./store.js";
 
 const STORAGE_KEY = "user-study-scores-v1";
 const SESSION_KEY = "user-study-session-v1";
@@ -236,19 +236,29 @@ async function handleSubmit() {
     if (!ok) return;
   }
 
-  if (!isTokenConfigured()) {
-    els.submitStatus.innerHTML =
-      '<span class="error">管理员尚未配置提交 Token（assets/config.js）。你仍可 Backup JSON 发给组织者。</span>';
-    return;
-  }
-
+  const payload = buildPayload();
   els.btnSubmit.disabled = true;
   els.submitStatus.textContent = "Submitting...";
+
   try {
-    const result = await submitScores(buildPayload());
-    const action = result.updated ? "updated" : "created";
-    els.submitStatus.innerHTML = `Submitted successfully (${action}). Issue <a href="${result.html_url}" target="_blank" rel="noopener">#${result.number}</a>`;
-    saveSession({ ...session, lastSubmitAt: new Date().toISOString(), issueNumber: result.number });
+    if (isTokenConfigured()) {
+      const result = await submitScores(payload);
+      const action = result.updated ? "updated" : "created";
+      els.submitStatus.innerHTML = `Submitted successfully (${action}). Issue <a href="${result.html_url}" target="_blank" rel="noopener">#${result.number}</a>`;
+      saveSession({ ...session, lastSubmitAt: new Date().toISOString(), issueNumber: result.number });
+      return;
+    }
+
+    // No token: open GitHub new-issue page (rater confirms once; must be logged into GitHub)
+    const url = buildGitHubSubmitUrl(payload);
+    const opened = window.open(url, "_blank", "noopener");
+    if (!opened) {
+      els.submitStatus.innerHTML = `弹窗被拦截。请手动打开：<a href="${url}" target="_blank" rel="noopener">提交到 GitHub</a>`;
+    } else {
+      els.submitStatus.innerHTML =
+        "已打开 GitHub 提交页：请确认已登录 GitHub，然后点击 <strong>Submit new issue</strong>。提交后组织者可在 admin 页自动统计。";
+    }
+    saveSession({ ...session, lastSubmitAt: new Date().toISOString() });
   } catch (err) {
     els.submitStatus.innerHTML = `<span class="error">${escapeHtml(err.message || String(err))}</span>`;
   } finally {
