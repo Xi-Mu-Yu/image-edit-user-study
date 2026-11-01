@@ -244,6 +244,11 @@ body { min-height: 100vh; }
   padding: 0 16px 28px;
 }
 
+/* Author display rules can override the HTML hidden attribute — force hide. */
+[hidden] {
+  display: none !important;
+}
+
 .gate {
   min-height: 100vh;
   display: grid;
