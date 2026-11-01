@@ -10,7 +10,7 @@
   <div id="loginGate" class="gate">
     <form id="loginForm" class="gate-card card">
       <h1>User Study Login</h1>
-      <p class="sub">请登录后开始评测。进度会自动保存在本机，完成后点击提交即可。</p>
+      <p class="sub">请登录后开始评测。进度会自动保存在本机；全部答完后可 Backup JSON。</p>
       <label class="field">
         <span>Rater ID / 姓名或编号</span>
         <input id="loginRaterId" type="text" required minlength="1" maxlength="64" placeholder="e.g. zhangsan" autocomplete="username" />
@@ -21,11 +21,10 @@
       </label>
       <button class="btn" type="submit">Enter / 进入评测</button>
       <p id="loginError" class="error" hidden></p>
-      <p class="hint">管理员统计页：<a href="admin.html">admin.html</a></p>
     </form>
   </div>
 
-  <div id="appRoot" hidden>
+  <div id="appRoot" class="is-hidden">
     <header class="top">
       <div class="top-inner">
         <div>
@@ -34,8 +33,7 @@
         </div>
         <div class="top-actions">
           <div class="rater-chip">Rater: <strong id="raterLabel">-</strong></div>
-          <button id="btnSubmit" type="button" class="btn">Submit / 提交</button>
-          <button id="btnExport" type="button" class="btn ghost">Backup JSON</button>
+          <button id="btnExport" type="button" class="btn" disabled title="Finish all cases first">Backup JSON</button>
           <button id="btnLogout" type="button" class="btn ghost">Logout</button>
         </div>
       </div>
@@ -51,7 +49,7 @@
         <ol>
           <li>Each case shows one <strong>Real Image</strong> and five edited results labeled <strong>A–E</strong>（盲评）.</li>
           <li>Rate every edited image on two criteria using <strong>1 (Poor) – 5 (Excellent)</strong>.</li>
-          <li>Scores auto-save in this browser. After finishing all cases, click <strong>Submit</strong>（提交后进入自动统计）.</li>
+          <li>Scores auto-save in this browser. After finishing <strong>all</strong> cases, click <strong>Backup JSON</strong> and send the file to the organizer.</li>
         </ol>
         <div class="criteria">
           <div>
@@ -63,7 +61,7 @@
             <p>How well non-edited regions stay consistent with the original.</p>
           </div>
         </div>
-        <p id="submitStatus" class="submit-status"></p>
+        <p id="exportHint" class="submit-status"></p>
       </section>
 
       <nav class="pager card">
@@ -81,7 +79,7 @@
     </main>
 
     <footer class="foot">
-      Login → rate → Submit. Organizer can view auto stats on the admin page.
+      Login → rate all cases → Backup JSON → send file to organizer
     </footer>
   </div>
 
