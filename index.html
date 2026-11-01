@@ -3,23 +3,23 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>User Study Evaluation Form</title>
+  <title>用户研究评测问卷 / User Study</title>
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
   <div id="loginGate" class="gate">
     <form id="loginForm" class="gate-card card">
-      <h1>User Study Login</h1>
-      <p class="sub">请登录后开始评测。进度会自动保存在本机；全部答完后可 Backup JSON。</p>
+      <h1>评测登录 / User Study Login</h1>
+      <p class="sub">请登录后开始评测。进度会自动保存在本机；全部答完后可导出 Backup JSON。</p>
       <label class="field">
-        <span>Rater ID / 姓名或编号</span>
-        <input id="loginRaterId" type="text" required minlength="1" maxlength="64" placeholder="e.g. zhangsan" autocomplete="username" />
+        <span>评测人编号 / Rater ID</span>
+        <input id="loginRaterId" type="text" required minlength="1" maxlength="64" placeholder="例如：zhangsan" autocomplete="username" />
       </label>
       <label class="field">
-        <span>Study Password / 评测口令</span>
-        <input id="loginPassword" type="password" required placeholder="ask the organizer" autocomplete="current-password" />
+        <span>评测口令 / Study Password</span>
+        <input id="loginPassword" type="password" required placeholder="请向组织者索取" autocomplete="current-password" />
       </label>
-      <button class="btn" type="submit">Enter / 进入评测</button>
+      <button class="btn" type="submit">进入评测 / Enter</button>
       <p id="loginError" class="error" hidden></p>
     </form>
   </div>
@@ -28,28 +28,28 @@
     <header class="top">
       <div class="top-inner">
         <div>
-          <h1>User Study Evaluation Form</h1>
-          <p class="sub">用户研究评测问卷 · Image Editing Methods</p>
+          <h1>用户研究评测问卷</h1>
+          <p class="sub">User Study Evaluation Form · Image Editing Methods</p>
         </div>
         <div class="top-actions">
-          <div class="rater-chip">Rater: <strong id="raterLabel">-</strong></div>
-          <button id="btnExport" type="button" class="btn" disabled title="Finish all cases first">Backup JSON</button>
-          <button id="btnLogout" type="button" class="btn ghost">Logout</button>
+          <div class="rater-chip">评测人 / Rater: <strong id="raterLabel">-</strong></div>
+          <button id="btnExport" type="button" class="btn" disabled title="请先完成全部样本">Backup JSON</button>
+          <button id="btnLogout" type="button" class="btn ghost">退出 / Logout</button>
         </div>
       </div>
       <div class="progress-wrap">
         <div id="progressBar" class="progress-bar"></div>
-        <div id="progressText" class="progress-text">0 / 0 completed</div>
+        <div id="progressText" class="progress-text">0 / 0 已完成</div>
       </div>
     </header>
 
     <main class="wrap">
       <section class="intro card">
-        <h2>Instructions / 说明</h2>
+        <h2>说明 / Instructions</h2>
         <ol>
           <li>
-            每个样本展示一张 <strong>Real Image（原图）</strong> 以及由不同方法生成的五张编辑结果 <strong>A–E</strong>（盲评，方法名隐藏）。<br />
-            <span class="en">Each case shows one Real Image and five edited results labeled A–E (blind evaluation).</span>
+            每个样本展示一张 <strong>原图（待编辑）</strong> 以及由不同方法生成的五张编辑结果 <strong>A–E</strong>（盲评，方法名隐藏）。<br />
+            <span class="en">Each case shows one original image to edit and five edited results labeled A–E (blind evaluation).</span>
           </li>
           <li>
             请按两项标准为每张编辑结果打分，分值为 <strong>1（很差）– 5（很好）</strong>。<br />
@@ -62,33 +62,33 @@
         </ol>
         <div class="criteria">
           <div>
-            <strong>Target Semantics Alignment / 目标语义对齐</strong>
-            <p>How accurately the edit matches the intended change.</p>
+            <strong>目标语义对齐 / Target Semantics Alignment</strong>
+            <p>编辑结果在多大程度上准确、合理地实现了预期语义变化。<br /><span class="en">How accurately the edit matches the intended change.</span></p>
           </div>
           <div>
-            <strong>Background Preservation / 背景保持</strong>
-            <p>How well non-edited regions stay consistent with the original.</p>
+            <strong>背景保持 / Background Preservation</strong>
+            <p>未编辑区域与原图保持一致的程度（无意外失真、偏色或纹理变化）。<br /><span class="en">How well non-edited regions stay consistent with the original.</span></p>
           </div>
         </div>
         <p id="exportHint" class="submit-status"></p>
       </section>
 
       <nav class="pager card">
-        <button id="prevBtn" type="button" class="btn">← Prev</button>
+        <button id="prevBtn" type="button" class="btn">← 上一题</button>
         <label class="jump">
-          Case
+          样本 / Case
           <input id="jumpInput" type="number" min="1" value="1" />
           <span id="caseTotal">/ 0</span>
         </label>
-        <button id="nextBtn" type="button" class="btn">Next →</button>
-        <button id="filterIncomplete" type="button" class="btn ghost">Jump to incomplete</button>
+        <button id="nextBtn" type="button" class="btn">下一题 →</button>
+        <button id="filterIncomplete" type="button" class="btn ghost">跳到未完成</button>
       </nav>
 
       <section id="caseView" class="case card" aria-live="polite"></section>
     </main>
 
     <footer class="foot">
-      Login → rate all cases → Backup JSON → send file to organizer
+      登录 → 全部打分 → Backup JSON → 把文件发给组织者
     </footer>
   </div>
 
