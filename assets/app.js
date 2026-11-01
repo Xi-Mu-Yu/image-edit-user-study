@@ -269,9 +269,12 @@ async function handleSubmit() {
 function enterApp() {
   scores = loadScores();
   els.loginGate.hidden = true;
+  els.loginGate.setAttribute("aria-hidden", "true");
   els.appRoot.hidden = false;
+  els.appRoot.removeAttribute("aria-hidden");
   els.raterLabel.textContent = session.raterId;
   renderCase();
+  window.scrollTo({ top: 0, behavior: "instant" in window ? "instant" : "auto" });
 }
 
 function logout() {
