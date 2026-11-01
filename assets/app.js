@@ -89,16 +89,16 @@ function updateProgress() {
   const total = data.cases.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   els.progressBar.style.backgroundSize = `${pct}% 100%`;
-  els.progressText.textContent = `${done} / ${total} completed (${pct}%)`;
+  els.progressText.textContent = `${done} / ${total} 已完成 (${pct}%)`;
 
   const ready = allComplete();
   els.btnExport.disabled = !ready;
   els.btnExport.title = ready
-    ? "Download your completed scores"
-    : `Finish all cases first (${done}/${total})`;
+    ? "下载已完成的评分文件"
+    : `请先完成全部样本（${done}/${total}）`;
   els.exportHint.textContent = ready
-    ? "All cases completed. You can now Backup JSON and send the file to the organizer."
-    : `Backup JSON unlocks after all cases are rated (${done}/${total}).`;
+    ? "全部样本已完成。现在可以 Backup JSON，并将文件发送给组织者。"
+    : `完成全部评分后才可 Backup JSON（${done}/${total}）。`;
   els.exportHint.classList.toggle("ready", ready);
 }
 
@@ -151,7 +151,7 @@ function renderCase() {
         data.criteria.every((c) => typeof s?.[m]?.[c.key] === "number");
 
       const scoreBlock = isReal
-        ? `<div class="scores"><div class="metric"><label>待编辑原图 / Original image to edit<br/><span class="en">（不评分，仅对照）</span></label></div></div>`
+        ? `<div class="scores"><div class="metric"><label>待编辑原图<br/><span class="en">Original image to edit（不评分）</span></label></div></div>`
         : `<div class="scores">
             ${data.criteria
               .map((c) => {
@@ -165,7 +165,7 @@ function renderCase() {
                   )
                   .join("");
                 return `<div class="metric">
-                  <label>${c.en}<br/>${c.zh}</label>
+                  <label>${c.zh}<br/><span class="en">${c.en}</span></label>
                   <div class="stars">${buttons}</div>
                 </div>`;
               })
@@ -173,7 +173,7 @@ function renderCase() {
           </div>`;
 
       return `<article class="col ${isReal ? "real" : ""} ${methodDone ? "done" : ""}">
-        <div class="col-title"><span>${isReal ? "Real Image" : m}</span></div>
+        <div class="col-title"><span>${isReal ? "原图 / Real Image" : m}</span></div>
         <div class="thumb"><img src="${img}" alt="${m}" loading="lazy" data-full="${img}" /></div>
         ${scoreBlock}
       </article>`;
@@ -185,18 +185,18 @@ function renderCase() {
       <h2>
         <span class="badge">Case ${item.id}</span>
         <span class="badge">ID ${item.image_id}</span>
-        ${isCaseComplete(item) ? '<span class="badge">Completed</span>' : ""}
+        ${isCaseComplete(item) ? '<span class="badge">已完成</span>' : ""}
       </h2>
       <div class="meta">
-        <div><strong>Editing Instruction / 编辑指令：</strong>${escapeHtml(
-          item.instruction_en || ""
-        )}${item.instruction_zh ? ` ｜ ${escapeHtml(item.instruction_zh)}` : ""}</div>
-        <div><strong>Original Prompt：</strong>${escapeHtml(item.original_prompt_en || "")}${
-          item.original_prompt_zh ? ` ｜ ${escapeHtml(item.original_prompt_zh)}` : ""
-        }</div>
-        <div><strong>Editing Prompt：</strong>${escapeHtml(item.editing_prompt_en || "")}${
-          item.editing_prompt_zh ? ` ｜ ${escapeHtml(item.editing_prompt_zh)}` : ""
-        }</div>
+        <div><strong>编辑指令 / Editing Instruction：</strong>${escapeHtml(
+          item.instruction_zh || item.instruction_en || ""
+        )}${item.instruction_zh && item.instruction_en ? ` ｜ ${escapeHtml(item.instruction_en)}` : ""}</div>
+        <div><strong>原始提示 / Original Prompt：</strong>${escapeHtml(
+          item.original_prompt_zh || item.original_prompt_en || ""
+        )}${item.original_prompt_zh && item.original_prompt_en ? ` ｜ ${escapeHtml(item.original_prompt_en)}` : ""}</div>
+        <div><strong>编辑提示 / Editing Prompt：</strong>${escapeHtml(
+          item.editing_prompt_zh || item.editing_prompt_en || ""
+        )}${item.editing_prompt_zh && item.editing_prompt_en ? ` ｜ ${escapeHtml(item.editing_prompt_en)}` : ""}</div>
       </div>
     </div>
     <div class="grid">${cols}</div>
@@ -311,17 +311,17 @@ els.filterIncomplete.addEventListener("click", () => {
       return;
     }
   }
-  alert("All cases are complete.");
+  alert("全部样本已完成。");
 });
 
 els.btnExport.addEventListener("click", () => {
   if (!allComplete()) {
-    alert(`Please finish all cases first (${completedCount()}/${data.cases.length}).`);
+    alert(`请先完成全部样本（${completedCount()}/${data.cases.length}）。`);
     return;
   }
   const payload = buildPayload();
   download(`user_study_${payload.rater_id}_${Date.now()}.json`, JSON.stringify(payload, null, 2));
-  els.exportHint.textContent = "JSON downloaded. Please send this file to the organizer.";
+  els.exportHint.textContent = "JSON 已下载，请将该文件发送给组织者。";
 });
 
 els.btnLogout.addEventListener("click", logout);
