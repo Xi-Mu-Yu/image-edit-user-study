@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Study Evaluation Form</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <header class="top">
+    <div class="top-inner">
+      <div>
+        <h1>User Study Evaluation Form</h1>
+        <p class="sub">用户研究评测问卷 · Image Editing Methods</p>
+      </div>
+      <div class="top-actions">
+        <label class="rater">
+          <span>Rater ID</span>
+          <input id="raterId" type="text" placeholder="your name / id" autocomplete="username" />
+        </label>
+        <button id="btnExport" type="button" class="btn">Export JSON</button>
+        <button id="btnExportCsv" type="button" class="btn ghost">Export CSV</button>
+        <button id="btnClear" type="button" class="btn ghost danger">Clear</button>
+      </div>
+    </div>
+    <div class="progress-wrap">
+      <div id="progressBar" class="progress-bar"></div>
+      <div id="progressText" class="progress-text">0 / 0 completed</div>
+    </div>
+  </header>
+
+  <main class="wrap">
+    <section class="intro card">
+      <h2>Instructions / 说明</h2>
+      <ol>
+        <li>Each case shows one <strong>Real Image</strong> and five edited results labeled <strong>A–E</strong>（盲评，方法名隐藏）.</li>
+        <li>Rate every edited image on two criteria using <strong>1 (Poor) – 5 (Excellent)</strong>.</li>
+        <li>Scores are saved in this browser automatically. Export JSON/CSV when finished.</li>
+      </ol>
+      <div class="criteria">
+        <div>
+          <strong>Target Semantics Alignment / 目标语义对齐</strong>
+          <p>How accurately the edit matches the intended change.</p>
+        </div>
+        <div>
+          <strong>Background Preservation / 背景保持</strong>
+          <p>How well non-edited regions stay consistent with the original.</p>
+        </div>
+      </div>
+    </section>
+
+    <nav class="pager card">
+      <button id="prevBtn" type="button" class="btn">← Prev</button>
+      <label class="jump">
+        Case
+        <input id="jumpInput" type="number" min="1" value="1" />
+        <span id="caseTotal">/ 0</span>
+      </label>
+      <button id="nextBtn" type="button" class="btn">Next →</button>
+      <button id="filterIncomplete" type="button" class="btn ghost">Jump to incomplete</button>
+    </nav>
+
+    <section id="caseView" class="case card" aria-live="polite"></section>
+  </main>
+
+  <footer class="foot">
+    Static GitHub Pages form · scores stored locally in your browser
+  </footer>
+
+  <script src="assets/app.js" type="module"></script>
+</body>
+</html>
