@@ -37,8 +37,22 @@ git push -u origin main
 
 `https://<YOUR_USER>.github.io/<REPO>/`
 
+## Usage
+
+1. Raters open the site → login with **Rater ID + study password**
+2. Score all cases (auto-saved locally)
+3. Click **Submit** once (writes to GitHub Issues)
+4. Organizer opens [`admin.html`](./admin.html) with admin password for auto stats
+
+Default passwords are in `assets/config.js` (`studyPassword` / `adminPassword`).
+
+## Enable Submit (one-time)
+
+Submit needs a fine-grained GitHub PAT (Issues read/write on this repo only).
+See [TOKEN_SETUP.md](./TOKEN_SETUP.md).
+
 ## Notes
 
-- Scores are stored in the rater’s browser (`localStorage`).
-- Use **Export JSON / Export CSV** and collect files from each rater.
-- Method names stay blinded as A–E (same as the Word form).
+- Method names stay blinded as A–E on the form and admin page.
+- Map A–E back to real methods offline with your local shuffle mapping table.
+- Revoke the PAT after the study ends.

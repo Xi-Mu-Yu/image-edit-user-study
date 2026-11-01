@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>User Study Admin Stats</title>
+  <link rel="stylesheet" href="assets/styles.css" />
+</head>
+<body>
+  <div id="adminGate" class="gate">
+    <form id="adminLogin" class="gate-card card">
+      <h1>Admin Statistics</h1>
+      <p class="sub">自动汇总所有已提交的评测结果（按盲评列 A–E）。</p>
+      <label class="field">
+        <span>Admin Password</span>
+        <input id="adminPassword" type="password" required autocomplete="current-password" />
+      </label>
+      <button class="btn" type="submit">View Stats</button>
+      <p id="adminError" class="error" hidden></p>
+      <p class="hint"><a href="index.html">← Back to form</a></p>
+    </form>
+  </div>
+
+  <div id="adminRoot" class="wrap" hidden>
+    <section class="card">
+      <div class="admin-head">
+        <div>
+          <h1>Auto Statistics</h1>
+          <p class="sub" id="summaryLine">Loading...</p>
+        </div>
+        <div class="top-actions">
+          <button id="btnRefresh" type="button" class="btn">Refresh</button>
+          <button id="btnExportAll" type="button" class="btn ghost">Export CSV</button>
+          <a class="btn ghost" href="index.html">Form</a>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Overall mean (A–E)</h2>
+      <div class="table-wrap">
+        <table id="meanTable" class="stats-table"></table>
+      </div>
+    </section>
+
+    <section class="card">
+      <h2>Submissions</h2>
+      <div class="table-wrap">
+        <table id="subTable" class="stats-table"></table>
+      </div>
+    </section>
+  </div>
+
+  <script src="assets/admin.js" type="module"></script>
+</body>
+</html>

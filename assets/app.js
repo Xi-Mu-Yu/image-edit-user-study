@@ -1,7 +1,16 @@
+import { CONFIG } from "./config.js";
+import { submitScores, isTokenConfigured } from "./store.js";
+
 const STORAGE_KEY = "user-study-scores-v1";
-const RATER_KEY = "user-study-rater-v1";
+const SESSION_KEY = "user-study-session-v1";
 
 const els = {
+  loginGate: document.getElementById("loginGate"),
+  loginForm: document.getElementById("loginForm"),
+  loginRaterId: document.getElementById("loginRaterId"),
+  loginPassword: document.getElementById("loginPassword"),
+  loginError: document.getElementById("loginError"),
+  appRoot: document.getElementById("appRoot"),
   caseView: document.getElementById("caseView"),
   prevBtn: document.getElementById("prevBtn"),
   nextBtn: document.getElementById("nextBtn"),
@@ -9,27 +18,47 @@ const els = {
   caseTotal: document.getElementById("caseTotal"),
   progressBar: document.getElementById("progressBar"),
   progressText: document.getElementById("progressText"),
-  raterId: document.getElementById("raterId"),
+  raterLabel: document.getElementById("raterLabel"),
+  btnSubmit: document.getElementById("btnSubmit"),
   btnExport: document.getElementById("btnExport"),
-  btnExportCsv: document.getElementById("btnExportCsv"),
-  btnClear: document.getElementById("btnClear"),
+  btnLogout: document.getElementById("btnLogout"),
   filterIncomplete: document.getElementById("filterIncomplete"),
+  submitStatus: document.getElementById("submitStatus"),
 };
 
 let data = null;
-let index = 0; // 0-based
-let scores = loadScores();
+let index = 0;
+let scores = {};
+let session = loadSession();
+
+function loadSession() {
+  try {
+    return JSON.parse(localStorage.getItem(SESSION_KEY) || "null");
+  } catch {
+    return null;
+  }
+}
+
+function saveSession(next) {
+  session = next;
+  if (next) localStorage.setItem(SESSION_KEY, JSON.stringify(next));
+  else localStorage.removeItem(SESSION_KEY);
+}
+
+function scoreKey() {
+  return `${STORAGE_KEY}:${session?.raterId || "anon"}`;
+}
 
 function loadScores() {
   try {
-    return JSON.parse(localStorage.getItem(STORAGE_KEY) || "{}");
+    return JSON.parse(localStorage.getItem(scoreKey()) || "{}");
   } catch {
     return {};
   }
 }
 
 function saveScores() {
-  localStorage.setItem(STORAGE_KEY, JSON.stringify(scores));
+  localStorage.setItem(scoreKey(), JSON.stringify(scores));
   updateProgress();
 }
 
@@ -48,13 +77,18 @@ function isCaseComplete(caseItem) {
   return true;
 }
 
+function completedCount() {
+  return data.cases.filter(isCaseComplete).length;
+}
+
 function updateProgress() {
   if (!data) return;
-  const done = data.cases.filter(isCaseComplete).length;
+  const done = completedCount();
   const total = data.cases.length;
   const pct = total ? Math.round((done / total) * 100) : 0;
   els.progressBar.style.backgroundSize = `${pct}% 100%`;
   els.progressText.textContent = `${done} / ${total} completed (${pct}%)`;
+  els.btnSubmit.disabled = false;
 }
 
 function setScore(caseId, method, criterion, value) {
@@ -63,6 +97,27 @@ function setScore(caseId, method, criterion, value) {
   if (!scores[key][method]) scores[key][method] = {};
   scores[key][method][criterion] = value;
   saveScores();
+}
+
+function escapeHtml(str) {
+  return String(str)
+    .replaceAll("&", "&amp;")
+    .replaceAll("<", "&lt;")
+    .replaceAll(">", "&gt;")
+    .replaceAll('"', "&quot;");
+}
+
+function openLightbox(src) {
+  let box = document.querySelector(".lightbox");
+  if (!box) {
+    box = document.createElement("div");
+    box.className = "lightbox";
+    box.innerHTML = "<img alt='preview' />";
+    box.addEventListener("click", () => box.classList.remove("open"));
+    document.body.appendChild(box);
+  }
+  box.querySelector("img").src = src;
+  box.classList.add("open");
 }
 
 function renderCase() {
@@ -138,42 +193,14 @@ function renderCase() {
 
   els.caseView.querySelectorAll(".stars button").forEach((btn) => {
     btn.addEventListener("click", () => {
-      setScore(
-        item.id,
-        btn.dataset.method,
-        btn.dataset.crit,
-        Number(btn.dataset.val)
-      );
+      setScore(item.id, btn.dataset.method, btn.dataset.crit, Number(btn.dataset.val));
       renderCase();
     });
   });
-
   els.caseView.querySelectorAll("img[data-full]").forEach((img) => {
     img.addEventListener("click", () => openLightbox(img.dataset.full));
   });
-
   updateProgress();
-}
-
-function escapeHtml(str) {
-  return String(str)
-    .replaceAll("&", "&amp;")
-    .replaceAll("<", "&lt;")
-    .replaceAll(">", "&gt;")
-    .replaceAll('"', "&quot;");
-}
-
-function openLightbox(src) {
-  let box = document.querySelector(".lightbox");
-  if (!box) {
-    box = document.createElement("div");
-    box.className = "lightbox";
-    box.innerHTML = "<img alt='preview' />";
-    box.addEventListener("click", () => box.classList.remove("open"));
-    document.body.appendChild(box);
-  }
-  box.querySelector("img").src = src;
-  box.classList.add("open");
 }
 
 function download(filename, text, type = "application/json") {
@@ -186,53 +213,80 @@ function download(filename, text, type = "application/json") {
   URL.revokeObjectURL(url);
 }
 
-function exportJson() {
-  const payload = {
-    exported_at: new Date().toISOString(),
-    rater_id: els.raterId.value.trim() || "anonymous",
-    criteria: data.criteria,
+function buildPayload() {
+  return {
+    schema: 1,
+    rater_id: session.raterId,
+    submitted_at: new Date().toISOString(),
+    completed_cases: completedCount(),
+    total_cases: data.cases.length,
+    criteria: data.criteria.map((c) => c.key),
     methods: data.methods,
     scores,
   };
-  const name = `user_study_${payload.rater_id}_${Date.now()}.json`;
-  download(name, JSON.stringify(payload, null, 2));
 }
 
-function exportCsv() {
-  const rows = [["rater_id", "case_id", "image_id", "method", "criterion", "score"]];
-  const rater = els.raterId.value.trim() || "anonymous";
-  for (const c of data.cases) {
-    const s = scores[caseKey(c.id)] || {};
-    for (const m of data.methods) {
-      for (const crit of data.criteria) {
-        const val = s?.[m]?.[crit.key];
-        rows.push([
-          rater,
-          c.id,
-          c.image_id,
-          m,
-          crit.key,
-          val == null ? "" : val,
-        ]);
-      }
-    }
+async function handleSubmit() {
+  const done = completedCount();
+  const total = data.cases.length;
+  if (done < total) {
+    const ok = confirm(
+      `还有 ${total - done} 个 case 未完成。确定仍要提交吗？\nSubmit incomplete results (${done}/${total})?`
+    );
+    if (!ok) return;
   }
-  const csv = rows.map((r) => r.map((x) => `"${String(x).replaceAll('"', '""')}"`).join(",")).join("\n");
-  download(`user_study_${rater}_${Date.now()}.csv`, csv, "text/csv");
+
+  if (!isTokenConfigured()) {
+    els.submitStatus.innerHTML =
+      '<span class="error">管理员尚未配置提交 Token（assets/config.js）。你仍可 Backup JSON 发给组织者。</span>';
+    return;
+  }
+
+  els.btnSubmit.disabled = true;
+  els.submitStatus.textContent = "Submitting...";
+  try {
+    const result = await submitScores(buildPayload());
+    const action = result.updated ? "updated" : "created";
+    els.submitStatus.innerHTML = `Submitted successfully (${action}). Issue <a href="${result.html_url}" target="_blank" rel="noopener">#${result.number}</a>`;
+    saveSession({ ...session, lastSubmitAt: new Date().toISOString(), issueNumber: result.number });
+  } catch (err) {
+    els.submitStatus.innerHTML = `<span class="error">${escapeHtml(err.message || String(err))}</span>`;
+  } finally {
+    els.btnSubmit.disabled = false;
+  }
 }
 
-function jumpToIncomplete() {
-  const start = index + 1;
-  for (let i = 0; i < data.cases.length; i++) {
-    const j = (start + i) % data.cases.length;
-    if (!isCaseComplete(data.cases[j])) {
-      index = j;
-      renderCase();
-      return;
-    }
-  }
-  alert("All cases are complete.");
+function enterApp() {
+  scores = loadScores();
+  els.loginGate.hidden = true;
+  els.appRoot.hidden = false;
+  els.raterLabel.textContent = session.raterId;
+  renderCase();
 }
+
+function logout() {
+  saveSession(null);
+  location.reload();
+}
+
+els.loginForm.addEventListener("submit", (e) => {
+  e.preventDefault();
+  els.loginError.hidden = true;
+  const raterId = els.loginRaterId.value.trim();
+  const password = els.loginPassword.value;
+  if (!raterId) {
+    els.loginError.textContent = "Please enter Rater ID.";
+    els.loginError.hidden = false;
+    return;
+  }
+  if (password !== CONFIG.studyPassword) {
+    els.loginError.textContent = "Wrong study password.";
+    els.loginError.hidden = false;
+    return;
+  }
+  saveSession({ raterId, loginAt: new Date().toISOString() });
+  enterApp();
+});
 
 els.prevBtn.addEventListener("click", () => {
   if (index > 0) {
@@ -252,38 +306,42 @@ els.jumpInput.addEventListener("change", () => {
   index = Math.min(Math.max(1, Math.round(n)), data.cases.length) - 1;
   renderCase();
 });
-els.btnExport.addEventListener("click", exportJson);
-els.btnExportCsv.addEventListener("click", exportCsv);
-els.btnClear.addEventListener("click", () => {
-  if (!confirm("Clear all local scores in this browser?")) return;
-  scores = {};
-  saveScores();
-  renderCase();
+els.filterIncomplete.addEventListener("click", () => {
+  const start = index + 1;
+  for (let i = 0; i < data.cases.length; i++) {
+    const j = (start + i) % data.cases.length;
+    if (!isCaseComplete(data.cases[j])) {
+      index = j;
+      renderCase();
+      return;
+    }
+  }
+  alert("All cases are complete.");
 });
-els.filterIncomplete.addEventListener("click", jumpToIncomplete);
-els.raterId.value = localStorage.getItem(RATER_KEY) || "";
-els.raterId.addEventListener("change", () => {
-  localStorage.setItem(RATER_KEY, els.raterId.value.trim());
+els.btnSubmit.addEventListener("click", handleSubmit);
+els.btnExport.addEventListener("click", () => {
+  const payload = buildPayload();
+  download(`user_study_${payload.rater_id}_${Date.now()}.json`, JSON.stringify(payload, null, 2));
 });
+els.btnLogout.addEventListener("click", logout);
 
 document.addEventListener("keydown", (e) => {
+  if (els.appRoot.hidden) return;
   if (e.target.matches("input, textarea")) return;
   if (e.key === "ArrowLeft") els.prevBtn.click();
   if (e.key === "ArrowRight") els.nextBtn.click();
 });
 
-const dataUrl = new URL("../data/cases.json", import.meta.url);
-fetch(dataUrl)
+fetch(new URL("../data/cases.json", import.meta.url))
   .then((r) => {
     if (!r.ok) throw new Error(`Failed to load cases.json (${r.status})`);
     return r.json();
   })
   .then((json) => {
     data = json;
-    renderCase();
+    if (session?.raterId) enterApp();
   })
   .catch((err) => {
-    els.caseView.innerHTML = `<p style="color:#b42318">Failed to load data/cases.json. Open this site via a local server or GitHub Pages (not file://).<br/>${escapeHtml(
-      err.message
-    )}</p>`;
+    els.loginError.hidden = false;
+    els.loginError.textContent = err.message;
   });

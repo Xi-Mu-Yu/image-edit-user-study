@@ -7,65 +7,83 @@
   <link rel="stylesheet" href="assets/styles.css" />
 </head>
 <body>
-  <header class="top">
-    <div class="top-inner">
-      <div>
-        <h1>User Study Evaluation Form</h1>
-        <p class="sub">用户研究评测问卷 · Image Editing Methods</p>
-      </div>
-      <div class="top-actions">
-        <label class="rater">
-          <span>Rater ID</span>
-          <input id="raterId" type="text" placeholder="your name / id" autocomplete="username" />
-        </label>
-        <button id="btnExport" type="button" class="btn">Export JSON</button>
-        <button id="btnExportCsv" type="button" class="btn ghost">Export CSV</button>
-        <button id="btnClear" type="button" class="btn ghost danger">Clear</button>
-      </div>
-    </div>
-    <div class="progress-wrap">
-      <div id="progressBar" class="progress-bar"></div>
-      <div id="progressText" class="progress-text">0 / 0 completed</div>
-    </div>
-  </header>
-
-  <main class="wrap">
-    <section class="intro card">
-      <h2>Instructions / 说明</h2>
-      <ol>
-        <li>Each case shows one <strong>Real Image</strong> and five edited results labeled <strong>A–E</strong>（盲评，方法名隐藏）.</li>
-        <li>Rate every edited image on two criteria using <strong>1 (Poor) – 5 (Excellent)</strong>.</li>
-        <li>Scores are saved in this browser automatically. Export JSON/CSV when finished.</li>
-      </ol>
-      <div class="criteria">
-        <div>
-          <strong>Target Semantics Alignment / 目标语义对齐</strong>
-          <p>How accurately the edit matches the intended change.</p>
-        </div>
-        <div>
-          <strong>Background Preservation / 背景保持</strong>
-          <p>How well non-edited regions stay consistent with the original.</p>
-        </div>
-      </div>
-    </section>
-
-    <nav class="pager card">
-      <button id="prevBtn" type="button" class="btn">← Prev</button>
-      <label class="jump">
-        Case
-        <input id="jumpInput" type="number" min="1" value="1" />
-        <span id="caseTotal">/ 0</span>
+  <div id="loginGate" class="gate">
+    <form id="loginForm" class="gate-card card">
+      <h1>User Study Login</h1>
+      <p class="sub">请登录后开始评测。进度会自动保存在本机，完成后点击提交即可。</p>
+      <label class="field">
+        <span>Rater ID / 姓名或编号</span>
+        <input id="loginRaterId" type="text" required minlength="1" maxlength="64" placeholder="e.g. zhangsan" autocomplete="username" />
       </label>
-      <button id="nextBtn" type="button" class="btn">Next →</button>
-      <button id="filterIncomplete" type="button" class="btn ghost">Jump to incomplete</button>
-    </nav>
+      <label class="field">
+        <span>Study Password / 评测口令</span>
+        <input id="loginPassword" type="password" required placeholder="ask the organizer" autocomplete="current-password" />
+      </label>
+      <button class="btn" type="submit">Enter / 进入评测</button>
+      <p id="loginError" class="error" hidden></p>
+      <p class="hint">管理员统计页：<a href="admin.html">admin.html</a></p>
+    </form>
+  </div>
 
-    <section id="caseView" class="case card" aria-live="polite"></section>
-  </main>
+  <div id="appRoot" hidden>
+    <header class="top">
+      <div class="top-inner">
+        <div>
+          <h1>User Study Evaluation Form</h1>
+          <p class="sub">用户研究评测问卷 · Image Editing Methods</p>
+        </div>
+        <div class="top-actions">
+          <div class="rater-chip">Rater: <strong id="raterLabel">-</strong></div>
+          <button id="btnSubmit" type="button" class="btn">Submit / 提交</button>
+          <button id="btnExport" type="button" class="btn ghost">Backup JSON</button>
+          <button id="btnLogout" type="button" class="btn ghost">Logout</button>
+        </div>
+      </div>
+      <div class="progress-wrap">
+        <div id="progressBar" class="progress-bar"></div>
+        <div id="progressText" class="progress-text">0 / 0 completed</div>
+      </div>
+    </header>
 
-  <footer class="foot">
-    Static GitHub Pages form · scores stored locally in your browser
-  </footer>
+    <main class="wrap">
+      <section class="intro card">
+        <h2>Instructions / 说明</h2>
+        <ol>
+          <li>Each case shows one <strong>Real Image</strong> and five edited results labeled <strong>A–E</strong>（盲评）.</li>
+          <li>Rate every edited image on two criteria using <strong>1 (Poor) – 5 (Excellent)</strong>.</li>
+          <li>Scores auto-save in this browser. After finishing all cases, click <strong>Submit</strong>.</li>
+        </ol>
+        <div class="criteria">
+          <div>
+            <strong>Target Semantics Alignment / 目标语义对齐</strong>
+            <p>How accurately the edit matches the intended change.</p>
+          </div>
+          <div>
+            <strong>Background Preservation / 背景保持</strong>
+            <p>How well non-edited regions stay consistent with the original.</p>
+          </div>
+        </div>
+        <p id="submitStatus" class="submit-status"></p>
+      </section>
+
+      <nav class="pager card">
+        <button id="prevBtn" type="button" class="btn">← Prev</button>
+        <label class="jump">
+          Case
+          <input id="jumpInput" type="number" min="1" value="1" />
+          <span id="caseTotal">/ 0</span>
+        </label>
+        <button id="nextBtn" type="button" class="btn">Next →</button>
+        <button id="filterIncomplete" type="button" class="btn ghost">Jump to incomplete</button>
+      </nav>
+
+      <section id="caseView" class="case card" aria-live="polite"></section>
+    </main>
+
+    <footer class="foot">
+      Login → rate → Submit. Organizer can view auto stats on the admin page.
+    </footer>
+  </div>
 
   <script src="assets/app.js" type="module"></script>
 </body>
