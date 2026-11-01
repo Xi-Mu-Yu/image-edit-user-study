@@ -244,8 +244,13 @@ body { min-height: 100vh; }
   padding: 0 16px 28px;
 }
 
-/* Author display rules can override the HTML hidden attribute — force hide. */
-[hidden] {
+/* Force-hide helpers (author display rules must not override these). */
+[hidden],
+.is-hidden {
+  display: none !important;
+}
+
+body.app-mode #loginGate {
   display: none !important;
 }
 
@@ -283,7 +288,8 @@ body { min-height: 100vh; }
   padding: 8px 12px;
   font-size: 0.9rem;
 }
-.submit-status { margin: 12px 0 0; font-size: 0.92rem; color: var(--good); }
+.submit-status { margin: 12px 0 0; font-size: 0.92rem; color: var(--muted); }
+.submit-status.ready { color: var(--good); font-weight: 650; }
 .submit-status .error { color: var(--danger); }
 
 .admin-head {
